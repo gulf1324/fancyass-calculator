@@ -1,0 +1,1338 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Field Abacus</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Crimson+Pro:ital,wght@0,400;1,400;1,600&display=swap" rel="stylesheet"/>
+  <style>
+/* ═══════════════════════════════════════════════
+   PALETTE  —  jungle night / oxidised iron / amber
+═══════════════════════════════════════════════ */
+:root {
+  /* jungle environment */
+  --jungle-deep:  #050d06;
+  --jungle-mid:   #091409;
+  --jungle-canopy:#0d1f0e;
+
+  /* device body */
+  --iron-dark:    #1a1a14;
+  --iron-mid:     #232318;
+  --iron-light:   #2e2d20;
+  --iron-edge:    #3c3b2a;
+  --iron-hi:      #4a4838;
+
+  /* worn brass / copper accents */
+  --brass:        #b8892a;
+  --brass-light:  #d4a84b;
+  --brass-dim:    #5a4215;
+  --brass-sheen:  #e8c870;
+  --copper:       #a0522d;
+  --rust:         #6b2e12;
+
+  /* display */
+  --display-ink:  #c8d8a8;
+  --display-dim:  #5a7040;
+  --display-glow: rgba(160,200,100,0.15);
+
+  /* operator amber */
+  --amber:        #c87820;
+  --amber-light:  #e09030;
+
+  /* equals red-ember */
+  --ember:        #c03818;
+  --ember-bright: #e05020;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { width: 100%; min-height: 100vh; }
+
+body {
+  min-height: 100vh;
+  background: var(--jungle-deep);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cinzel', serif;
+  overflow: hidden;
+  position: relative;
+  cursor: default;
+}
+
+/* ── JUNGLE BACKGROUND LAYERS ── */
+.bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* deep jungle gradient */
+.bg-gradient {
+  position: absolute;
+  inset: 0;
+  background:
+    /* top canopy shadow */
+    linear-gradient(to bottom,
+      #020804 0%,
+      #061209 18%,
+      #081a09 40%,
+      #071508 70%,
+      #040d05 100%),
+    /* horizontal fog bands */
+    radial-gradient(ellipse 120% 40% at 50% 60%,
+      rgba(15,35,12,0.6) 0%, transparent 100%);
+}
+
+/* SVG noise grain overlay — organic texture */
+.bg-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23g)' opacity='0.08'/%3E%3C/svg%3E");
+  background-size: 300px 300px;
+}
+
+/* subtle diagonal leaf-vein lines */
+.bg-veins {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    -35deg,
+    transparent 0px,
+    transparent 80px,
+    rgba(20,50,15,0.18) 80px,
+    rgba(20,50,15,0.18) 81px
+  ), repeating-linear-gradient(
+    55deg,
+    transparent 0px,
+    transparent 120px,
+    rgba(10,30,8,0.12) 120px,
+    rgba(10,30,8,0.12) 121px
+  );
+}
+
+/* vignette */
+.bg-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 75% 75% at 50% 50%,
+    transparent 30%,
+    rgba(0,0,0,0.75) 100%);
+}
+
+/* ── FIREFLIES ── */
+#firefly-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* ── MAIN WRAP ── */
+.calc-wrap {
+  position: relative;
+  z-index: 10;
+  /* slight perspective tilt — like device resting on a surface */
+  perspective: 900px;
+}
+
+/* ── DEVICE SHELL ── */
+.calculator {
+  position: relative;
+  width: 360px;
+
+  /* thick iron plate — multi-layer background for depth */
+  background:
+    /* top-face worn highlight */
+    linear-gradient(160deg,
+      rgba(74,72,56,0.5) 0%,
+      transparent 40%),
+    /* base iron colour */
+    linear-gradient(180deg,
+      var(--iron-light) 0%,
+      var(--iron-mid)   50%,
+      var(--iron-dark)  100%);
+
+  border-radius: 6px 6px 8px 8px;
+  padding: 22px 20px 20px;
+
+  /* layered box-shadow = thick plate illusion */
+  box-shadow:
+    /* top-edge brass rim light */
+    0 -1px 0 var(--brass-dim),
+    /* outer border */
+    0 0 0 1px rgba(58,59,42,0.9),
+    /* 1st depth layer */
+    0 4px 0 1px #111110,
+    /* 2nd depth layer */
+    0 8px 0 1px #0a0a09,
+    /* 3rd depth layer */
+    0 12px 0 1px #070706,
+    /* ambient drop shadow */
+    0 18px 50px rgba(0,0,0,0.95),
+    0 6px 16px rgba(0,0,0,0.8),
+    /* inner bevel top */
+    inset 0 2px 3px rgba(255,255,255,0.06),
+    /* inner bevel bottom */
+    inset 0 -2px 4px rgba(0,0,0,0.5),
+    /* left edge shadow */
+    inset 3px 0 6px rgba(0,0,0,0.25),
+    /* right edge shadow */
+    inset -3px 0 6px rgba(0,0,0,0.25);
+
+  /* subtle 3D tilt */
+  transform: rotateX(2deg);
+  transform-style: preserve-3d;
+}
+
+/* ── BRASS TOP TRIM ── */
+.calculator::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  border-radius: 6px 6px 0 0;
+  background: linear-gradient(90deg,
+    var(--brass-dim)   0%,
+    var(--brass)       15%,
+    var(--brass-sheen) 35%,
+    var(--brass-light) 50%,
+    var(--brass-sheen) 65%,
+    var(--brass)       85%,
+    var(--brass-dim)   100%);
+  box-shadow: 0 1px 6px rgba(184,137,42,0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+/* ── BOTTOM EDGE THICKNESS (simulates plate depth) ── */
+.plate-bottom {
+  position: absolute;
+  bottom: -12px; left: 3px; right: 3px;
+  height: 12px;
+  background: linear-gradient(180deg, #0e0e0c, #07070600);
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.7);
+}
+
+/* rivet corners */
+.rivet {
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, var(--brass-light), var(--brass-dim));
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.8),
+    inset 0 1px 1px rgba(255,255,255,0.2),
+    inset 0 -1px 2px rgba(0,0,0,0.4);
+}
+.rivet.tl { top: 10px; left: 10px; }
+.rivet.tr { top: 10px; right: 10px; }
+.rivet.bl { bottom: 10px; left: 10px; }
+.rivet.br { bottom: 10px; right: 10px; }
+
+/* corner bracket lines */
+.bracket {
+  position: absolute;
+  width: 22px; height: 22px;
+  border-color: var(--brass-dim);
+  border-style: solid;
+  opacity: 0.45;
+}
+.bracket.tl { top: 18px; left: 18px;   border-width: 1px 0 0 1px; }
+.bracket.tr { top: 18px; right: 18px;  border-width: 1px 1px 0 0; }
+.bracket.bl { bottom: 18px; left: 18px;  border-width: 0 0 1px 1px; }
+.bracket.br { bottom: 18px; right: 18px; border-width: 0 1px 1px 0; }
+
+/* ── DISPLAY PANEL ── */
+.display {
+  position: relative;
+  margin-bottom: 16px;
+
+  /* recessed into the plate */
+  background: linear-gradient(160deg, #0a0f06, #0e1509, #080d05);
+  border-radius: 4px;
+  padding: 14px 16px 12px;
+  overflow: hidden;
+
+  box-shadow:
+    /* deep inset recess */
+    inset 0 3px 8px rgba(0,0,0,0.9),
+    inset 0 1px 3px rgba(0,0,0,0.7),
+    inset 2px 0 4px rgba(0,0,0,0.4),
+    inset -2px 0 4px rgba(0,0,0,0.4),
+    /* phosphor glow from within */
+    inset 0 0 24px rgba(100,160,60,0.06),
+    /* outer rim */
+    0 0 0 1px rgba(30,30,20,0.9),
+    0 0 0 2px rgba(50,48,34,0.5);
+}
+
+/* phosphor scanlines */
+.display::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 3px,
+    rgba(0,0,0,0.18) 3px,
+    rgba(0,0,0,0.18) 4px
+  );
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* subtle green phosphor bloom */
+.display::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 60% at 80% 70%,
+    rgba(100,160,60,0.07), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+.display-expr {
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 13px;
+  color: var(--display-dim);
+  text-align: right;
+  min-height: 18px;
+  letter-spacing: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-bottom: 6px;
+  position: relative;
+  z-index: 3;
+}
+
+.display-num {
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 44px;
+  color: var(--display-ink);
+  text-align: right;
+  letter-spacing: 3px;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  position: relative;
+  z-index: 3;
+  text-shadow:
+    0 0 8px rgba(160,200,100,0.5),
+    0 0 20px rgba(120,170,70,0.2),
+    0 1px 0 rgba(0,0,0,0.8);
+}
+
+.display-num.impact {
+  animation: numImpact 0.3s ease-out forwards;
+}
+@keyframes numImpact {
+  0%   { color: #e8f8c0; text-shadow: 0 0 18px rgba(200,240,120,0.9), 0 0 40px rgba(160,220,80,0.5); }
+  100% { color: var(--display-ink); text-shadow: 0 0 8px rgba(160,200,100,0.5); }
+}
+
+/* shockwave on display */
+.shockwave {
+  position: absolute;
+  inset: -3px;
+  border-radius: 6px;
+  border: 2px solid var(--brass-light);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 10;
+  animation: shockRing 0.55s cubic-bezier(.2,0,.5,1) forwards;
+}
+@keyframes shockRing {
+  0%   { opacity: 0.8; transform: scale(0.97); }
+  100% { opacity: 0;   transform: scale(1.03); }
+}
+
+/* ── SECTION DIVIDER ── */
+.divider {
+  position: relative;
+  height: 1px;
+  margin: 0 4px 14px;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--iron-edge) 20%,
+    var(--brass-dim) 50%,
+    var(--iron-edge) 80%,
+    transparent);
+}
+.divider::before, .divider::after {
+  content: '';
+  position: absolute;
+  top: -1px;
+  width: 5px; height: 3px;
+  background: var(--brass-dim);
+  border-radius: 2px;
+}
+.divider::before { left:  20%; }
+.divider::after  { right: 20%; }
+
+/* ── BUTTON GRID ── */
+.btn-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+/* ── BASE BUTTON — cast iron key ── */
+.btn {
+  position: relative;
+  height: 66px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.5px;
+  outline: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  overflow: hidden;
+
+  /* iron key top-face */
+  background: linear-gradient(165deg,
+    var(--iron-hi)    0%,
+    var(--iron-light) 30%,
+    var(--iron-mid)   70%,
+    #181812           100%);
+
+  color: #b0a888;
+
+  transform: translateY(0);
+  transition: transform 80ms cubic-bezier(.15,.8,.2,1),
+              box-shadow 80ms cubic-bezier(.15,.8,.2,1);
+
+  /* 3D plate depth: stacked shadows */
+  box-shadow:
+    /* top-face edge highlight */
+    0 0 0 1px rgba(60,59,42,0.8),
+    /* bottom plate layers — creates thick key illusion */
+    0  3px 0 rgba(14,14,10,1),
+    0  6px 0 rgba(10,10,8,0.9),
+    0  8px 0 rgba(7,7,6,0.8),
+    /* ambient drop */
+    0 10px 12px rgba(0,0,0,0.6),
+    /* inner top bevel */
+    inset 0 1px 2px rgba(255,255,255,0.07),
+    /* inner bottom dark */
+    inset 0 -2px 3px rgba(0,0,0,0.55),
+    /* inner left */
+    inset 2px 0 3px rgba(255,255,255,0.03),
+    /* inner right */
+    inset -2px 0 3px rgba(0,0,0,0.2);
+}
+
+/* worn scratches on button top */
+.btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    /* diagonal scratch 1 */
+    linear-gradient(125deg,
+      transparent 30%, rgba(255,255,255,0.025) 31%,
+      rgba(255,255,255,0.025) 31.5%, transparent 32.5%),
+    /* diagonal scratch 2 */
+    linear-gradient(115deg,
+      transparent 55%, rgba(255,255,255,0.015) 55.5%,
+      rgba(255,255,255,0.015) 56%, transparent 57%),
+    /* top gloss */
+    linear-gradient(180deg,
+      rgba(255,255,255,0.05) 0%, transparent 40%);
+  pointer-events: none;
+  border-radius: 4px;
+}
+
+/* ── PRESSED STATE ── */
+.btn:active, .btn.pressed {
+  transform: translateY(7px);
+  box-shadow:
+    0 0 0 1px rgba(60,59,42,0.8),
+    0 1px 0 rgba(14,14,10,1),
+    0 2px 4px rgba(0,0,0,0.5),
+    inset 0 3px 6px rgba(0,0,0,0.7),
+    inset 0 -1px 2px rgba(0,0,0,0.3),
+    inset 2px 0 4px rgba(0,0,0,0.4),
+    inset -2px 0 4px rgba(0,0,0,0.3);
+}
+
+/* ── HIT FLASH ── */
+.btn .hit-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 4px;
+  background: radial-gradient(ellipse at 50% 50%,
+    rgba(255,255,255,0.16) 0%,
+    transparent 70%);
+  opacity: 0;
+  pointer-events: none;
+  animation: hitFlash 0.25s ease-out forwards;
+}
+@keyframes hitFlash {
+  0%   { opacity: 1; transform: scale(0.7); }
+  100% { opacity: 0; transform: scale(1.15); }
+}
+
+/* ── NUM BUTTONS ── */
+.btn-num {
+  /* slightly lighter worn iron */
+  background: linear-gradient(165deg,
+    #383628 0%,
+    #2a2920 30%,
+    #222118 70%,
+    #181812 100%);
+  color: #c8bc98;
+}
+.btn-num:active, .btn-num.pressed {
+  background: linear-gradient(165deg, #1e1d16, #181712, #131210);
+}
+
+/* ── OPERATOR BUTTONS — brass-tinted ── */
+.btn-op {
+  background: linear-gradient(165deg,
+    #3a2c10 0%,
+    #2e2208 30%,
+    #241a06 70%,
+    #180f03 100%);
+  color: var(--brass-light);
+  text-shadow: 0 0 10px rgba(212,168,75,0.45);
+  box-shadow:
+    0 0 0 1px rgba(90,66,21,0.7),
+    0  3px 0 rgba(10,7,0,1),
+    0  6px 0 rgba(7,5,0,0.9),
+    0  8px 0 rgba(5,3,0,0.8),
+    0 10px 12px rgba(0,0,0,0.6),
+    inset 0 1px 2px rgba(212,168,75,0.12),
+    inset 0 -2px 3px rgba(0,0,0,0.6),
+    0 0 10px rgba(184,137,42,0.05);
+}
+.btn-op:active, .btn-op.pressed {
+  text-shadow: 0 0 16px var(--brass-light);
+  box-shadow:
+    0 0 0 1px rgba(90,66,21,0.7),
+    0 1px 0 rgba(10,7,0,1),
+    0 2px 5px rgba(0,0,0,0.5),
+    inset 0 3px 6px rgba(0,0,0,0.75),
+    0 0 18px rgba(184,137,42,0.12);
+}
+
+/* ── EQUALS BUTTON — ember/copper ── */
+.btn-eq {
+  background: linear-gradient(165deg,
+    #3a1206 0%,
+    #2c0e04 30%,
+    #200a03 70%,
+    #160602 100%);
+  color: var(--ember-bright);
+  font-size: 22px;
+  text-shadow: 0 0 12px rgba(192,56,24,0.6);
+  box-shadow:
+    0 0 0 1px rgba(90,30,10,0.7),
+    0  3px 0 rgba(10,3,0,1),
+    0  6px 0 rgba(7,2,0,0.9),
+    0  8px 0 rgba(5,1,0,0.8),
+    0 10px 12px rgba(0,0,0,0.6),
+    inset 0 1px 2px rgba(192,56,24,0.15),
+    inset 0 -2px 3px rgba(0,0,0,0.6),
+    0 0 14px rgba(192,56,24,0.07);
+}
+.btn-eq:active, .btn-eq.pressed {
+  text-shadow: 0 0 22px var(--ember-bright);
+  box-shadow:
+    0 0 0 1px rgba(90,30,10,0.7),
+    0 1px 0 rgba(10,3,0,1),
+    0 2px 5px rgba(0,0,0,0.5),
+    inset 0 3px 8px rgba(0,0,0,0.8),
+    0 0 24px rgba(192,56,24,0.25);
+}
+
+/* ── CLEAR / FN ── */
+.btn-clear {
+  background: linear-gradient(165deg, #2e1008, #221008, #180a05, #100603);
+  color: #b05030;
+  font-size: 12px;
+  letter-spacing: 2px;
+}
+.btn-fn {
+  background: linear-gradient(165deg, #282618, #1e1d14, #181712, #110f0b);
+  color: #7a7258;
+  font-size: 12px;
+  letter-spacing: 1px;
+}
+
+.btn-zero { grid-column: span 2; }
+
+/* hover (pointer devices) */
+@media (hover: hover) {
+  .btn-num:hover {
+    background: linear-gradient(165deg, #42402e, #343220, #28271c, #1c1b14);
+    box-shadow:
+      0 0 0 1px rgba(60,59,42,0.8),
+      0 3px 0 rgba(14,14,10,1), 0 6px 0 rgba(10,10,8,0.9), 0 8px 0 rgba(7,7,6,0.8),
+      0 10px 14px rgba(0,0,0,0.6), inset 0 1px 2px rgba(255,255,255,0.09);
+  }
+  .btn-op:hover {
+    box-shadow:
+      0 0 0 1px rgba(90,66,21,0.7),
+      0 3px 0 rgba(10,7,0,1), 0 6px 0 rgba(7,5,0,0.9), 0 8px 0 rgba(5,3,0,0.8),
+      0 10px 12px rgba(0,0,0,0.6), inset 0 1px 2px rgba(212,168,75,0.16),
+      0 0 20px rgba(184,137,42,0.12);
+  }
+  .btn-eq:hover {
+    box-shadow:
+      0 0 0 1px rgba(90,30,10,0.7),
+      0 3px 0 rgba(10,3,0,1), 0 6px 0 rgba(7,2,0,0.9), 0 8px 0 rgba(5,1,0,0.8),
+      0 10px 12px rgba(0,0,0,0.6), inset 0 1px 2px rgba(192,56,24,0.2),
+      0 0 26px rgba(192,56,24,0.2);
+  }
+}
+
+/* ── DUST PARTICLE LAYER ── */
+#dust-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+  overflow: hidden;
+}
+
+/* ── ERROR QUAKE ── */
+@keyframes quake {
+  0%,100% { transform: rotateX(2deg) translateX(0); }
+  15% { transform: rotateX(2deg) translateX(-8px) rotate(-0.4deg); }
+  35% { transform: rotateX(2deg) translateX(8px)  rotate(0.4deg); }
+  55% { transform: rotateX(2deg) translateX(-5px) rotate(-0.2deg); }
+  75% { transform: rotateX(2deg) translateX(5px)  rotate(0.2deg); }
+}
+.calculator.quake { animation: quake 0.45s ease; }
+
+/* ── FOOTER ── */
+.calc-footer {
+  margin-top: 24px;
+  text-align: center;
+  font-family: 'Crimson Pro', serif;
+  font-style: italic;
+  font-size: 11px;
+  letter-spacing: 4px;
+  color: rgba(120,100,50,0.4);
+  text-shadow: none;
+}
+  </style>
+</head>
+<body>
+
+<!-- Background layers -->
+<div class="bg">
+  <div class="bg-gradient"></div>
+  <div class="bg-grain"></div>
+  <div class="bg-veins"></div>
+  <div class="bg-vignette"></div>
+</div>
+
+<!-- Firefly canvas -->
+<canvas id="firefly-canvas"></canvas>
+
+<!-- Dust layer -->
+<div id="dust-layer"></div>
+
+<!-- ═══════════════════════════════════════
+     FIREFLY ANIMATION
+═══════════════════════════════════════ -->
+<script>
+(function() {
+  const canvas = document.getElementById('firefly-canvas');
+  const ctx    = canvas.getContext('2d');
+  let W, H;
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  // Each firefly: wandering with organic easing
+  const COUNT = 38;
+  const flies = [];
+
+  for (let i = 0; i < COUNT; i++) {
+    flies.push({
+      x:    Math.random() * window.innerWidth,
+      y:    Math.random() * window.innerHeight,
+      tx:   Math.random() * window.innerWidth,
+      ty:   Math.random() * window.innerHeight,
+      size: 1.2 + Math.random() * 2.0,
+      // glow pulse
+      phase:  Math.random() * Math.PI * 2,
+      pulseSpeed: 0.012 + Math.random() * 0.025,
+      // wander speed
+      speed: 0.2 + Math.random() * 0.5,
+      // how often to pick new target (frames)
+      nextTarget: Math.floor(Math.random() * 200 + 80),
+      frameCount: 0,
+      // colour: warm yellow-amber
+      hue: 42 + Math.random() * 18,  // 42–60 deg
+      opacity: 0.3 + Math.random() * 0.6,
+    });
+  }
+
+  function pickTarget(fly) {
+    // bias toward centre-ish so they don't all drift to edges
+    fly.tx = W * 0.1 + Math.random() * W * 0.8;
+    fly.ty = H * 0.1 + Math.random() * H * 0.8;
+    fly.nextTarget = Math.floor(Math.random() * 260 + 100);
+    fly.frameCount = 0;
+  }
+
+  function drawFly(fly) {
+    const pulse = 0.5 + 0.5 * Math.sin(fly.phase);
+    const alpha = fly.opacity * (0.4 + 0.6 * pulse);
+    const r     = fly.size * (0.7 + 0.5 * pulse);
+
+    // outer glow
+    const grad = ctx.createRadialGradient(fly.x, fly.y, 0, fly.x, fly.y, r * 8);
+    grad.addColorStop(0,   `hsla(${fly.hue},100%,75%,${alpha * 0.8})`);
+    grad.addColorStop(0.2, `hsla(${fly.hue},90%,65%,${alpha * 0.4})`);
+    grad.addColorStop(0.5, `hsla(${fly.hue},80%,55%,${alpha * 0.12})`);
+    grad.addColorStop(1,   `hsla(${fly.hue},70%,45%,0)`);
+
+    ctx.beginPath();
+    ctx.arc(fly.x, fly.y, r * 8, 0, Math.PI * 2);
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // bright core
+    ctx.beginPath();
+    ctx.arc(fly.x, fly.y, r, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${fly.hue + 10},100%,90%,${alpha})`;
+    ctx.fill();
+  }
+
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+
+    for (const fly of flies) {
+      // wander toward target with easing
+      const dx = fly.tx - fly.x;
+      const dy = fly.ty - fly.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+
+      // gentle organic drift
+      fly.x += (dx / Math.max(dist, 1)) * fly.speed + (Math.random() - 0.5) * 0.4;
+      fly.y += (dy / Math.max(dist, 1)) * fly.speed + (Math.random() - 0.5) * 0.4;
+
+      fly.phase += fly.pulseSpeed;
+      fly.frameCount++;
+
+      if (fly.frameCount >= fly.nextTarget || dist < 8) pickTarget(fly);
+
+      drawFly(fly);
+    }
+
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+</script>
+
+<!-- ═══════════════════════════════════════
+     AUDIO ENGINE  —  deep weapon impacts
+═══════════════════════════════════════ -->
+<script>
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let AC;
+function initAC() { if (!AC) AC = new AudioCtx(); }
+
+/* ── make a pitched noise burst ── */
+function noiseBuffer(dur, decay) {
+  const buf  = AC.createBuffer(1, AC.sampleRate * dur, AC.sampleRate);
+  const d    = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++)
+    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, decay);
+  return buf;
+}
+
+function playImpact(type) {
+  initAC();
+  const t = AC.currentTime;
+
+  if (type === 'num') {
+    /* heavy stone key strike — deep thud, no treble */
+    const nSrc  = AC.createBufferSource();
+    nSrc.buffer = noiseBuffer(0.25, 2.2);
+    const nFilt = AC.createBiquadFilter();
+    nFilt.type = 'lowpass'; nFilt.frequency.value = 160;
+    const nGain = AC.createGain();
+    nGain.gain.setValueAtTime(1.2, t);
+    nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    nSrc.connect(nFilt); nFilt.connect(nGain); nGain.connect(AC.destination);
+    nSrc.start(t);
+
+    /* sub thud oscillator */
+    const sub  = AC.createOscillator();
+    const subG = AC.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(80, t);
+    sub.frequency.exponentialRampToValueAtTime(38, t + 0.18);
+    subG.gain.setValueAtTime(0.7, t);
+    subG.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+    sub.connect(subG); subG.connect(AC.destination);
+    sub.start(t); sub.stop(t + 0.2);
+
+  } else if (type === 'op') {
+    /* iron ring — mid thud + metallic resonance */
+    const nSrc  = AC.createBufferSource();
+    nSrc.buffer = noiseBuffer(0.3, 1.6);
+    const nFilt = AC.createBiquadFilter();
+    nFilt.type = 'bandpass'; nFilt.frequency.value = 220; nFilt.Q.value = 1.2;
+    const nGain = AC.createGain();
+    nGain.gain.setValueAtTime(1.0, t);
+    nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.28);
+    nSrc.connect(nFilt); nFilt.connect(nGain); nGain.connect(AC.destination);
+    nSrc.start(t);
+
+    /* sub thud */
+    const sub  = AC.createOscillator();
+    const subG = AC.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(110, t);
+    sub.frequency.exponentialRampToValueAtTime(50, t + 0.2);
+    subG.gain.setValueAtTime(0.6, t);
+    subG.gain.exponentialRampToValueAtTime(0.001, t + 0.2);
+    sub.connect(subG); subG.connect(AC.destination);
+    sub.start(t); sub.stop(t + 0.22);
+
+    /* high-iron ring overtone */
+    const ring  = AC.createOscillator();
+    const ringG = AC.createGain();
+    ring.type = 'triangle';
+    ring.frequency.setValueAtTime(520, t);
+    ring.frequency.exponentialRampToValueAtTime(320, t + 0.18);
+    ringG.gain.setValueAtTime(0.12, t);
+    ringG.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+    ring.connect(ringG); ringG.connect(AC.destination);
+    ring.start(t); ring.stop(t + 0.25);
+
+  } else if (type === 'eq') {
+    /* greatsword slam — massive low impact + long resonance decay */
+    const nSrc  = AC.createBufferSource();
+    nSrc.buffer = noiseBuffer(0.6, 1.2);
+    const nFilt = AC.createBiquadFilter();
+    nFilt.type = 'lowpass'; nFilt.frequency.value = 180;
+    const nGain = AC.createGain();
+    nGain.gain.setValueAtTime(1.8, t);
+    nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.5);
+    nSrc.connect(nFilt); nFilt.connect(nGain); nGain.connect(AC.destination);
+    nSrc.start(t);
+
+    /* deep sub (ground shake) */
+    const sub  = AC.createOscillator();
+    const subG = AC.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(55, t);
+    sub.frequency.exponentialRampToValueAtTime(28, t + 0.45);
+    subG.gain.setValueAtTime(1.1, t);
+    subG.gain.exponentialRampToValueAtTime(0.001, t + 0.45);
+    sub.connect(subG); subG.connect(AC.destination);
+    sub.start(t); sub.stop(t + 0.5);
+
+    /* weapon ring-outs */
+    [95, 190, 285, 420].forEach((freq, i) => {
+      const o = AC.createOscillator();
+      const g = AC.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(freq, t + i * 0.018);
+      o.frequency.exponentialRampToValueAtTime(freq * 0.8, t + 0.65);
+      g.gain.setValueAtTime(0.22 - i * 0.04, t + i * 0.018);
+      g.gain.exponentialRampToValueAtTime(0.001, t + 0.65);
+      o.connect(g); g.connect(AC.destination);
+      o.start(t + i * 0.018); o.stop(t + 0.7);
+    });
+
+  } else if (type === 'clear') {
+    /* stone scrape + bass release */
+    const nSrc  = AC.createBufferSource();
+    nSrc.buffer = noiseBuffer(0.35, 0.9);
+    const nFilt = AC.createBiquadFilter();
+    nFilt.type = 'bandpass'; nFilt.frequency.value = 300; nFilt.Q.value = 0.6;
+    const nGain = AC.createGain();
+    nGain.gain.setValueAtTime(0.7, t);
+    nGain.gain.exponentialRampToValueAtTime(0.001, t + 0.3);
+    nSrc.connect(nFilt); nFilt.connect(nGain); nGain.connect(AC.destination);
+    nSrc.start(t);
+
+    const sub  = AC.createOscillator();
+    const subG = AC.createGain();
+    sub.type = 'sine';
+    sub.frequency.setValueAtTime(65, t);
+    sub.frequency.exponentialRampToValueAtTime(30, t + 0.25);
+    subG.gain.setValueAtTime(0.4, t);
+    subG.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+    sub.connect(subG); subG.connect(AC.destination);
+    sub.start(t); sub.stop(t + 0.28);
+  }
+}
+</script>
+
+<!-- ═══════════════════════════════════════
+     DUST PARTICLES
+═══════════════════════════════════════ -->
+<script>
+function spawnDust(btn, count, col) {
+  const rect  = btn.getBoundingClientRect();
+  const cx    = rect.left + rect.width  / 2;
+  const cy    = rect.top  + rect.height / 2;
+  const layer = document.getElementById('dust-layer');
+
+  for (let i = 0; i < count; i++) {
+    const p   = document.createElement('div');
+    const ang = Math.random() * Math.PI * 2;
+    const spd = 25 + Math.random() * 65;
+    const sz  = 1.5 + Math.random() * 4.5;
+    const dur = 0.28 + Math.random() * 0.35;
+    const vy  = -15 - Math.random() * 25; // upward bias
+
+    p.style.cssText = `
+      position:absolute;
+      left:${cx}px; top:${cy}px;
+      width:${sz}px; height:${sz}px;
+      border-radius:50%;
+      background:${col};
+      opacity:0.9;
+      pointer-events:none;
+      will-change:transform,opacity;
+      transition: transform ${dur}s cubic-bezier(.2,.8,.2,1),
+                  opacity   ${dur}s ease-out;
+    `;
+    layer.appendChild(p);
+
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      p.style.transform =
+        `translate(${Math.cos(ang)*spd}px,${Math.sin(ang)*spd + vy}px) scale(0)`;
+      p.style.opacity = '0';
+    }));
+    setTimeout(() => p.remove(), dur * 1000 + 60);
+  }
+}
+</script>
+
+<!-- ═══════════════════════════════════════
+     HTML STRUCTURE
+═══════════════════════════════════════ -->
+<div class="calc-wrap">
+  <div class="calculator" id="calc">
+
+    <div class="rivet tl"></div>
+    <div class="rivet tr"></div>
+    <div class="rivet bl"></div>
+    <div class="rivet br"></div>
+    <div class="bracket tl"></div>
+    <div class="bracket tr"></div>
+    <div class="bracket bl"></div>
+    <div class="bracket br"></div>
+
+    <!-- Display -->
+    <div class="display" id="display">
+      <div class="display-expr" id="expr"></div>
+      <div class="display-num"  id="numDisplay">0</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Button Grid -->
+    <div class="btn-grid">
+
+      <button class="btn btn-clear" data-action="clear">AC</button>
+      <button class="btn btn-fn"    data-action="sign">+/−</button>
+      <button class="btn btn-fn"    data-action="percent">%</button>
+      <button class="btn btn-op"    data-action="op" data-op="÷">÷</button>
+
+      <button class="btn btn-num" data-action="num" data-num="7">7</button>
+      <button class="btn btn-num" data-action="num" data-num="8">8</button>
+      <button class="btn btn-num" data-action="num" data-num="9">9</button>
+      <button class="btn btn-op"  data-action="op"  data-op="×">×</button>
+
+      <button class="btn btn-num" data-action="num" data-num="4">4</button>
+      <button class="btn btn-num" data-action="num" data-num="5">5</button>
+      <button class="btn btn-num" data-action="num" data-num="6">6</button>
+      <button class="btn btn-op"  data-action="op"  data-op="−">−</button>
+
+      <button class="btn btn-num" data-action="num" data-num="1">1</button>
+      <button class="btn btn-num" data-action="num" data-num="2">2</button>
+      <button class="btn btn-num" data-action="num" data-num="3">3</button>
+      <button class="btn btn-op"  data-action="op"  data-op="+">+</button>
+
+      <button class="btn btn-num btn-zero" data-action="num" data-num="0">0</button>
+      <button class="btn btn-num"          data-action="decimal">.</button>
+      <button class="btn btn-eq"           data-action="equals">=</button>
+
+    </div>
+    <div class="plate-bottom"></div>
+  </div>
+
+  <div class="calc-footer">Forged in the Forbidden Lands · Est. Year Unknown</div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     CALCULATOR LOGIC  (v3 — fully audited)
+═══════════════════════════════════════ -->
+<script>
+  /* ────────────────────────────────────────
+     STATE
+  ──────────────────────────────────────── */
+  let current     = '0';   // string shown on display
+  let previous    = null;  // left operand (number)
+  let operator    = null;  // pending operator string
+  let lastOperand = null;  // right operand saved for repeat =
+  let lastOp      = null;  // operator saved for repeat =
+  let shouldReset = false; // next digit press replaces display
+  let freshResult = false; // result just produced; op continues chain
+  let expression  = '';    // top expression row text
+
+  const numEl   = document.getElementById('numDisplay');
+  const exprEl  = document.getElementById('expr');
+  const dispEl  = document.getElementById('display');
+  const calcEl  = document.getElementById('calc');
+  const clearBtn = document.querySelector('[data-action="clear"]');
+
+  /* ────────────────────────────────────────
+     FORMATTING
+     - Rounds away floating-point noise
+     - Caps at 12 significant digits
+     - Falls back to exponential notation
+  ──────────────────────────────────────── */
+  function fmt(val) {
+    if (typeof val === 'string') return val;
+    if (!isFinite(val)) return 'ERROR';
+
+    // For integers, skip toPrecision (it can round e.g. -999999999999 → -1000000000000)
+    // For decimals, toPrecision(10) kills float noise (0.1+0.2 → 0.3)
+    let n = Number.isInteger(val) ? val : parseFloat(val.toPrecision(10));
+    let s = n.toString();
+
+    // Integers ≤ 13 visible chars: display as-is
+    if (Number.isInteger(n) && s.replace('-','').length <= 13) return s;
+
+    // Overflow → exponential, trimming trailing zeros from mantissa
+    if (s.replace(/[-\.]/g,'').length > 12) {
+      s = n.toExponential(5);
+      s = s.replace(/(\.\d*?)0+(e)/, '$1$2').replace(/\.(e)/, '$1');
+    }
+
+    return s;
+  }
+
+  function render(val, flash = true) {
+    const display = (val === 'ERROR') ? 'ERROR' : fmt(typeof val === 'string' ? parseFloat(val) : val);
+    numEl.textContent = display;
+    if (flash) {
+      numEl.classList.remove('impact');
+      void numEl.offsetWidth;
+      numEl.classList.add('impact');
+    }
+    updateClearLabel();
+  }
+
+  /* AC when state is fully reset, C otherwise */
+  function updateClearLabel() {
+    const pristine = current === '0' && previous === null && operator === null
+                     && lastOp === null;
+    clearBtn.textContent = pristine ? 'AC' : 'C';
+  }
+
+  function triggerShockwave() {
+    const el = document.createElement('div');
+    el.className = 'shockwave';
+    dispEl.appendChild(el);
+    el.addEventListener('animationend', () => el.remove());
+  }
+
+  /* ────────────────────────────────────────
+     ARITHMETIC
+  ──────────────────────────────────────── */
+  function applyOp(a, b, op) {
+    switch (op) {
+      case '+': return a + b;
+      case '−': return a - b;
+      case '×': return a * b;
+      case '÷':
+        if (b === 0) { showError(); return null; }
+        return a / b;
+      default:  return b;
+    }
+  }
+
+  /* ────────────────────────────────────────
+     INPUT HANDLERS
+  ──────────────────────────────────────── */
+
+  function inputNum(n) {
+    if (shouldReset) {
+      // Start fresh after an operator or result
+      current     = (n === '.') ? '0.' : n;
+      shouldReset = false;
+      freshResult = false;
+    } else {
+      if (n === '.' && current.includes('.')) return;          // no double decimal
+      if (current === '0'  && n !== '.') current = n;         // strip leading zero
+      else if (current === '-0' && n !== '.') current = '-' + n;
+      else {
+        // Limit to 12 numeric digits (not counting '-' or '.')
+        if (current.replace(/[-\.]/g, '').length >= 12) return;
+        current += n;
+      }
+    }
+    render(current, false);
+    updateClearLabel();
+  }
+
+  function inputOp(op) {
+    // If we have a pending operator AND the user typed a new number since,
+    // evaluate the chain first (e.g. 3 + 4 × → computes 3+4=7 first)
+    if (operator !== null && !shouldReset) {
+      const b = parseFloat(current);
+      const r = applyOp(previous, b, operator);
+      if (r === null) return; // error already shown
+      previous = r;
+      current  = String(r);
+      exprEl.textContent = fmt(r) + ' ' + op;
+    } else {
+      exprEl.textContent = fmt(parseFloat(current)) + ' ' + op;
+    }
+
+    previous    = parseFloat(current);
+    operator    = op;
+    shouldReset = true;
+    freshResult = false;
+    // Changing operator clears repeat state
+    lastOperand = null;
+    lastOp      = null;
+    expression  = exprEl.textContent;
+    updateClearLabel();
+  }
+
+  function doEquals() {
+    if (operator !== null && !shouldReset) {
+      // First =: store operands for potential repeat
+      lastOperand = parseFloat(current);
+      lastOp      = operator;
+      finishCalc(previous, lastOperand, lastOp);
+    } else if (lastOp !== null) {
+      // Repeat =: apply saved op to current result
+      finishCalc(parseFloat(current), lastOperand, lastOp);
+    }
+    // No operator ever set → = is a no-op
+  }
+
+  function finishCalc(a, b, op) {
+    const result = applyOp(a, b, op);
+    if (result === null) return; // error shown inside applyOp
+
+    exprEl.textContent = fmt(a) + ' ' + op + ' ' + fmt(b) + ' =';
+    current     = String(result);
+    previous    = null;
+    operator    = null;
+    shouldReset = true;
+    freshResult = true;
+    render(result, true);
+    triggerShockwave();
+  }
+
+  /* % — matches iOS Calculator behaviour:
+     · If a pending +/− operator exists: percentage OF previous  (200 + 5% → 200 + 10)
+     · Otherwise: divide by 100                                  (50% → 0.5)            */
+  function doPercent() {
+    if (current === '0') return;
+    let val = parseFloat(current);
+    if ((operator === '+' || operator === '−') && previous !== null) {
+      val = previous * (val / 100);
+    } else {
+      val = val / 100;
+    }
+    if (!isFinite(val)) { showError(); return; }
+    current     = String(val);
+    shouldReset = false; // keep editing this value
+    render(current, false);
+    updateClearLabel();
+  }
+
+  /* +/− : toggle sign of current entry or result */
+  function doSign() {
+    if (current === '0') return;
+    current = current.startsWith('-') ? current.slice(1) : '-' + current;
+    // If we just got a fresh result, toggling sign means we're editing again
+    freshResult = false;
+    render(current, false);
+    updateClearLabel();
+  }
+
+  /* C clears current entry; AC resets everything */
+  function doClear() {
+    const isAC = clearBtn.textContent === 'AC';
+    current     = '0';
+    shouldReset = false;
+    freshResult = false;
+    if (isAC) {
+      previous    = null;
+      operator    = null;
+      lastOperand = null;
+      lastOp      = null;
+      expression  = '';
+      exprEl.textContent = '';
+    }
+    render(0, false);
+    updateClearLabel();
+  }
+
+  /* Backspace — only works while actively composing a number */
+  function doBackspace() {
+    if (shouldReset || freshResult) return; // never edit a completed result
+    if (current.length > 1) {
+      current = current.slice(0, -1);
+      if (current === '-') current = '0'; // lone minus → 0
+    } else {
+      current = '0';
+    }
+    render(current, false);
+    updateClearLabel();
+  }
+
+  /* ────────────────────────────────────────
+     ERROR STATE
+  ──────────────────────────────────────── */
+  function showError() {
+    numEl.textContent = 'ERROR';
+    numEl.classList.remove('impact');
+    void numEl.offsetWidth;
+    numEl.classList.add('impact');
+    calcEl.classList.remove('quake');
+    void calcEl.offsetWidth;
+    calcEl.classList.add('quake');
+    // Full reset after animation
+    setTimeout(() => {
+      current     = '0'; previous  = null; operator    = null;
+      lastOperand = null; lastOp   = null; expression  = '';
+      shouldReset = false; freshResult = false;
+      render(0, false);
+      exprEl.textContent = '';
+      updateClearLabel();
+    }, 650);
+  }
+
+  /* ────────────────────────────────────────
+     BUTTON DISPATCH
+  ──────────────────────────────────────── */
+  function handleBtn(btn) {
+    const action = btn.dataset.action;
+
+    const flash = document.createElement('div');
+    flash.className = 'hit-flash';
+    btn.appendChild(flash);
+    flash.addEventListener('animationend', () => flash.remove());
+
+    switch (action) {
+      case 'num':
+        playImpact('num');
+        spawnDust(btn, 7, 'rgba(100,90,60,0.85)');
+        inputNum(btn.dataset.num);
+        break;
+      case 'decimal':
+        playImpact('num');
+        spawnDust(btn, 7, 'rgba(100,90,60,0.85)');
+        inputNum('.');
+        break;
+      case 'op':
+        playImpact('op');
+        spawnDust(btn, 12, 'rgba(180,130,40,0.8)');
+        inputOp(btn.dataset.op);
+        break;
+      case 'equals':
+        playImpact('eq');
+        spawnDust(btn, 22, 'rgba(200,70,30,0.85)');
+        doEquals();
+        break;
+      case 'clear':
+        playImpact('clear');
+        spawnDust(btn, 10, 'rgba(140,60,30,0.8)');
+        doClear();
+        break;
+      case 'sign':
+        playImpact('num');
+        spawnDust(btn, 5, 'rgba(100,90,60,0.7)');
+        doSign();
+        break;
+      case 'percent':
+        playImpact('num');
+        spawnDust(btn, 5, 'rgba(100,90,60,0.7)');
+        doPercent();
+        break;
+    }
+  }
+
+  /* ────────────────────────────────────────
+     POINTER EVENTS
+  ──────────────────────────────────────── */
+  document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('pointerdown',  () => { btn.classList.add('pressed'); handleBtn(btn); });
+    btn.addEventListener('pointerup',    () => btn.classList.remove('pressed'));
+    btn.addEventListener('pointerleave', () => btn.classList.remove('pressed'));
+    btn.addEventListener('pointercancel',() => btn.classList.remove('pressed'));
+  });
+
+  /* ────────────────────────────────────────
+     KEYBOARD
+  ──────────────────────────────────────── */
+  document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+    let btn = null;
+
+    if (e.key >= '0' && e.key <= '9') {
+      btn = document.querySelector(`[data-num="${e.key}"]`);
+    } else if (e.key === 'Backspace') {
+      e.preventDefault();
+      doBackspace();
+      playImpact('num');
+      return;
+    } else {
+      const keyMap = {
+        '.':      '[data-action="decimal"]',
+        ',':      '[data-action="decimal"]',
+        '+':      '[data-op="+"]',
+        '-':      '[data-op="−"]',
+        '*':      '[data-op="×"]',
+        'x':      '[data-op="×"]',
+        '/':      '[data-op="÷"]',
+        'Enter':  '[data-action="equals"]',
+        '=':      '[data-action="equals"]',
+        'Escape': '[data-action="clear"]',
+        'Delete': '[data-action="clear"]',
+        '%':      '[data-action="percent"]',
+      };
+      if (keyMap[e.key]) btn = document.querySelector(keyMap[e.key]);
+    }
+
+    if (btn) {
+      e.preventDefault();
+      btn.classList.add('pressed');
+      handleBtn(btn);
+      setTimeout(() => btn.classList.remove('pressed'), 140);
+    }
+  });
+
+  /* init */
+  updateClearLabel();
+</script>
+</body>
+</html>
